@@ -1,10 +1,12 @@
-# WEATHERMAN DASHBOARD
+# WEATHERSTATION DASHBOARD
 # For Home Assistant and ESPHome
-# Designed by Madelena Mak 2022 - https://mmak.es
 
-# Cue "Blame it on the Weatherman" by B*Witched!
+substitutions:
+  name: esphome-web-9ea614
+  friendly_name: Weather Station
+
 esphome:
-  name: "weatherman"
+  name: "weatherstation"
   on_boot:
       priority: 200.0
       then:
@@ -30,16 +32,17 @@ logger:
 # Enable Home Assistant API
 api:
 
+# Allow Over-The-Air updates
 ota:
-
+- platform: esphome
 
 button:
   - platform: shutdown
-    name: "Weatherman - Shutdown"
+    name: "Weatherstation - Shutdown"
   - platform: restart
-    name: "Weatherman - Restart"
+    name: "Weatherstation - Restart"
   - platform: template
-    name: "Weatherman - Refresh Screen"
+    name: "Weatherstation - Refresh Screen"
     entity_category: config
     on_press:
       - script.execute: update_screen
@@ -103,8 +106,6 @@ wifi:
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: !secret weatherman_ap_ssid
-    password: !secret weatherman_ap_password
 
 
 # Include custom fonts
@@ -171,34 +172,31 @@ font:
     size: 36
     glyphs: *mdi-weather-glyphs
 
-
 # Include Custom Titles
 # image:
-#   - file: "images/weatherman-title-train.png"
+#   - file: "images/weatherstation-title-train.png"
 #     id: title_train
 #     type: BINARY
-#   - file: "images/weatherman-title-weather.png"
+#   - file: "images/weatherstation-title-weather.png"
 #     id: title_weather
 #     type: BINARY
 
-
-# Check if motion is detected in the living room.
+# Check if motion is detected at home.
 binary_sensor:
   - platform: homeassistant
-    entity_id: binary_sensor.weatherman_motion_detected
+    entity_id: binary_sensor.home_occupancy
     id: motion_detected
 
-
 sensor:
-  # Create sensors for monitoring Weatherman remotely.
+  # Create sensors for monitoring weatherstation remotely.
   - platform: template
-    name: "Weatherman - Display Last Update"
+    name: "Weatherstation - Display Last Update"
     device_class: timestamp
     entity_category: "diagnostic"
     id: display_last_update
     
   - platform: template
-    name: "Weatherman - Recorded Display Refresh"
+    name: "Weatherstation - Recorded Display Refresh"
     accuracy_decimals: 0
     unit_of_measurement: "Refreshes"
     state_class: "total_increasing"
@@ -206,45 +204,15 @@ sensor:
     lambda: 'return id(recorded_display_refresh);'
   
   - platform: wifi_signal
-    name: "Weatherman - WiFi Signal Strength"
+    name: "Weatherstation - WiFi Signal Strength"
     id: wifisignal
     unit_of_measurement: "dBm"
     entity_category: "diagnostic"
     update_interval: 60s
 
-  # Call Subway and Weather sensors from HA.
-  - platform: homeassistant
-    entity_id: sensor.gtfs_mta_subway_manhattan 
-    id: train_manhattan_due_in
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
 
   - platform: homeassistant
-    entity_id: sensor.gtfs_mta_subway_canarsie
-    id: train_canarsie_due_in
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-    
-  - platform: homeassistant
-    entity_id: sensor.gtfs_mta_subway_manhattan
-    attribute: Next bus due in
-    id: train_manhattan_next_train_due_in
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-    
-  - platform: homeassistant
-    entity_id: sensor.gtfs_mta_subway_canarsie
-    attribute: Next bus due in
-    id: train_canarsie_next_train_due_in
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-
-  - platform: homeassistant
-    entity_id: weather.hourly
+    entity_id: weather.forecast_home
     attribute: temperature
     id: weather_temperature
     on_value:
@@ -252,7 +220,7 @@ sensor:
         - lambda: 'id(data_updated) = true;'
 
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_temperature_0
     id: weather_temperature_0
     on_value:
@@ -260,7 +228,7 @@ sensor:
         - lambda: 'id(data_updated) = true;'
 
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_temperature_1
     id: weather_temperature_1
     on_value:
@@ -268,7 +236,7 @@ sensor:
         - lambda: 'id(data_updated) = true;'
 
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_temperature_2
     id: weather_temperature_2
     on_value:
@@ -276,43 +244,9 @@ sensor:
         - lambda: 'id(data_updated) = true;'
 
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_temperature_3
     id: weather_temperature_3
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-
-
-text_sensor:
-  - platform: homeassistant
-    entity_id: sensor.gtfs_mta_subway_manhattan
-    attribute: Due at
-    id: train_manhattan_due_at
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-  
-  - platform: homeassistant
-    entity_id: sensor.gtfs_mta_subway_canarsie
-    attribute: Due at
-    id: train_canarsie_due_at
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-  
-  - platform: homeassistant
-    entity_id: sensor.gtfs_mta_subway_manhattan
-    attribute: Next bus
-    id: train_manhattan_next_train_due_at
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-  
-  - platform: homeassistant
-    entity_id: sensor.gtfs_mta_subway_canarsie
-    attribute: Next bus
-    id: train_canarsie_next_train_due_at
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
@@ -325,91 +259,68 @@ text_sensor:
         - lambda: 'id(data_updated) = true;'
 
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_condition_now
     id: weather_condition_now
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_condition_0
     id: weather_condition_0
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_timestamp_0
     id: weather_timestamp_0
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_condition_1
     id: weather_condition_1
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_timestamp_1
     id: weather_timestamp_1
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_condition_2
     id: weather_condition_2
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_timestamp_2
     id: weather_timestamp_2
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_condition_3
     id: weather_condition_3
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
   - platform: homeassistant
-    entity_id: sensor.weatherman_data
+    entity_id: sensor.weatherstation_data
     attribute: weather_timestamp_3
     id: weather_timestamp_3
     on_value:
       then:
         - lambda: 'id(data_updated) = true;'
-
-  - platform: homeassistant
-    entity_id: sensor.weatherman_data
-    attribute: train_status
-    id: train_status
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-  - platform: homeassistant
-    entity_id: sensor.weatherman_data
-    attribute: train_status_manhattan
-    id: train_status_manhattan
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-  - platform: homeassistant
-    entity_id: sensor.weatherman_data
-    attribute: train_status_canarsie
-    id: train_status_canarsie
-    on_value:
-      then:
-        - lambda: 'id(data_updated) = true;'
-
 
 # Define colors
 # This design is white on black so this is necessary.
@@ -512,26 +423,26 @@ display:
         it.printf(375, 306, id(font_mdi_medium), color_text, TextAlign::TOP_CENTER, "%s", weather_icon_map[id(weather_condition_3).state.c_str()].c_str());
         it.printf(375, 354, id(font_small_bold), color_text, TextAlign::TOP_CENTER, "%2.0f°C", id(weather_temperature_3).state);
 
-        // Train Service Section
-        // it.image(0, 420, id(title_train)); 
-        it.printf(240, 408, id(font_title), color_text, TextAlign::TOP_CENTER, "L TRAIN");
+#        // Train Service Section
+#        // it.image(0, 420, id(title_train)); 
+#        it.printf(240, 408, id(font_title), color_text, TextAlign::TOP_CENTER, "L TRAIN");
 
-        it.printf(240, 472, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%s", id(train_status).state.c_str());
+#        it.printf(240, 472, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%s", id(train_status).state.c_str());
 
-        it.print(150, 524, id(font_small_bold), color_text, TextAlign::TOP_CENTER, "TO MANHATTAN");
-        it.printf(150, 546, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_status_manhattan).state.c_str());
-        it.print(330, 524, id(font_small_bold), color_text, TextAlign::TOP_CENTER, "TO CANARSIE");
-        it.printf(330, 546, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_status_canarsie).state.c_str());
+#        it.print(150, 524, id(font_small_bold), color_text, TextAlign::TOP_CENTER, "TO MANHATTAN");
+#       it.printf(150, 546, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_status_manhattan).state.c_str());
+#        it.print(330, 524, id(font_small_bold), color_text, TextAlign::TOP_CENTER, "TO CANARSIE");
+#        it.printf(330, 546, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_status_canarsie).state.c_str());
 
-        it.printf(150, 584, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%2.0f MIN", id(train_manhattan_due_in).state);
-        it.printf(330, 584, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%2.0f MIN", id(train_canarsie_due_in).state);
-        it.printf(150, 616, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_manhattan_due_at).state.c_str());
-        it.printf(330, 616, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_manhattan_due_at).state.c_str());
+#        it.printf(150, 584, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%2.0f MIN", id(train_manhattan_due_in).state);
+#        it.printf(330, 584, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%2.0f MIN", id(train_canarsie_due_in).state);
+#        it.printf(150, 616, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_manhattan_due_at).state.c_str());
+#        it.printf(330, 616, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_manhattan_due_at).state.c_str());
 
-        it.printf(150, 652, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%2.0f MIN", id(train_manhattan_next_train_due_in).state);
-        it.printf(330, 652, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%2.0f MIN", id(train_canarsie_next_train_due_in).state);
-        it.printf(150, 684, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_manhattan_next_train_due_at).state.c_str());
-        it.printf(330, 684, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_canarsie_next_train_due_at).state.c_str());
+#        it.printf(150, 652, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%2.0f MIN", id(train_manhattan_next_train_due_in).state);
+#        it.printf(330, 652, id(font_medium_bold), color_text, TextAlign::TOP_CENTER, "%2.0f MIN", id(train_canarsie_next_train_due_in).state);
+#        it.printf(150, 684, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_manhattan_next_train_due_at).state.c_str());
+#        it.printf(330, 684, id(font_small_book), color_text, TextAlign::TOP_CENTER, "%s", id(train_canarsie_next_train_due_at).state.c_str());
 
         // Refresh Timestamp
         // Code by EnsconcE from https://community.home-assistant.io/t/esphome-show-time/348903
